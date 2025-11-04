@@ -7,20 +7,20 @@ import android.view.View
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
-import android.widget.NumberPicker // Componente del diálogo
-import android.graphics.Color // Para el resaltado de botones (Color.parseColor)
+import android.widget.NumberPicker
+import android.graphics.Color
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.room.Room
-import androidx.appcompat.app.AlertDialog // Para el diálogo
-import com.mod6.ae1_abpro1_gimnasio.R
+import androidx.appcompat.app.AlertDialog
 import com.mod6.ae1_abpro1_gimnasio.data.db.TimerDatabase
 import com.mod6.ae1_abpro1_gimnasio.data.repository.TimerRepository
 import com.mod6.ae1_abpro1_gimnasio.presentation.TimerViewModel
 import com.mod6.ae1_abpro1_gimnasio.presentation.TimerViewModelFactory
 import java.text.SimpleDateFormat
 import java.util.Locale
+import androidx.core.graphics.toColorInt
 
 class MainActivity : AppCompatActivity() {
 
@@ -30,8 +30,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var buttonToggleTimer: Button
     private lateinit var buttonReset: Button
     private lateinit var textViewAuditLog: TextView
-
-    // Vistas de Control de Modo y Configuración
     private lateinit var buttonSetCronometerMode: Button
     private lateinit var buttonSetTimerMode: Button
     private lateinit var buttonConfigureTime: Button
@@ -40,61 +38,59 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // 1. Encontrar elementos del layout
+        // Mapear elementos del layout
         textViewTimer           = findViewById(R.id.textViewTimer)
         buttonToggleTimer       = findViewById(R.id.buttonToggleTimer)
         buttonReset             = findViewById(R.id.buttonReset)
         textViewAuditLog        = findViewById(R.id.textViewAuditLog)
-
-        // Vistas de la nueva interfaz de modo/configuración
         buttonSetCronometerMode = findViewById(R.id.buttonSetCronometerMode)
         buttonSetTimerMode      = findViewById(R.id.buttonSetTimerMode)
         buttonConfigureTime     = findViewById(R.id.buttonConfigureTime)
 
-        // 2. Inicialización de Room y ViewModel
+        // Inicializar componentes de Room y ViewModel
         val db = Room.databaseBuilder(
             applicationContext,
             TimerDatabase::class.java, "timer-db"
         ).build()
         val repository = TimerRepository(db.timerDao())
-        val factory = TimerViewModelFactory(repository)
-        viewModel = ViewModelProvider(this, factory).get(TimerViewModel::class.java)
+        val factory    = TimerViewModelFactory(repository)
+        viewModel      = ViewModelProvider(this, factory).get(TimerViewModel::class.java)
 
-        // 3. Observar LiveData
+        // Observers de LiveData
 
         // Tiempo
         viewModel.tiempoActualSegundos.observe(this, Observer { segundos ->
             textViewTimer.text = formatTime(segundos)
         })
 
-        // Estado (Controla Iniciar/Pausar y deshabilita la configuración)
+        // Estado
         viewModel.isRunning.observe(this, Observer { isRunning ->
             buttonToggleTimer.text = if (isRunning) "Pausar" else "Iniciar"
-            buttonReset.isEnabled = !isRunning
+            buttonReset.isEnabled  = !isRunning
 
-            // Deshabilitar la configuración de modo/duración mientras corre
+            // Deshabilita configuración de modo/duración mientras opera
             buttonSetCronometerMode.isEnabled = !isRunning
-            buttonSetTimerMode.isEnabled = !isRunning
-            buttonConfigureTime.isEnabled = !isRunning
+            buttonSetTimerMode.isEnabled      = !isRunning
+            buttonConfigureTime.isEnabled     = !isRunning
         })
 
-        // Modo (Controla la visibilidad y el resaltado)
+        // Modo (controla visibilidad y otros detalles de UI)
         viewModel.isTimerMode.observe(this, Observer { isTimerMode ->
-            // Mostrar/Ocultar el botón de configuración (solo en modo Temporizador)
+            // Muetra/Oculta el botón de configuración (sólo en Temporizador)
             buttonConfigureTime.visibility = if (isTimerMode) View.VISIBLE else View.GONE
 
-            // Resaltar el modo activo
+            // Resalta el modo activo
             if (isTimerMode) {
                 // Modo Temporizador activo
-                buttonSetTimerMode.setBackgroundColor(Color.parseColor("#4CAF50"))
+                buttonSetTimerMode.setBackgroundColor("#4CAF50".toColorInt())
                 buttonSetCronometerMode.setBackgroundColor(Color.GRAY)
             } else {
                 // Modo Cronómetro activo
                 buttonSetTimerMode.setBackgroundColor(Color.GRAY)
-                buttonSetCronometerMode.setBackgroundColor(Color.parseColor("#4CAF50"))
+                buttonSetCronometerMode.setBackgroundColor("#4CAF50".toColorInt())
             }
 
-            // Resetear al cambiar de modo, solo si no está corriendo
+            // Resetea al cambiar de modo, sólo si no está corriendo el timer
             if (viewModel.isRunning.value != true) {
                 viewModel.resetTimer()
             }
@@ -113,18 +109,20 @@ class MainActivity : AppCompatActivity() {
         // Carga inicial del log
         viewModel.loadAuditLog()
 
-        // 4. Configurar Listeners
+        // Listeners
 
-        // Botón Modo Cronómetro
+        // Botón Cronómetro
         buttonSetCronometerMode.setOnClickListener {
             viewModel.toggleMode(false)
-            Toast.makeText(this, "Modo: Cronómetro", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Modo: Cronómetro",
+                Toast.LENGTH_SHORT).show()
         }
 
-        // Botón Modo Temporizador
+        // Botón Temporizador
         buttonSetTimerMode.setOnClickListener {
             viewModel.toggleMode(true)
-            Toast.makeText(this, "Modo: Temporizador", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Modo: Temporizador",
+                Toast.LENGTH_SHORT).show()
         }
 
         // Botón Configurar Tiempo (Abre el diálogo de NumberPicker)
@@ -140,13 +138,13 @@ class MainActivity : AppCompatActivity() {
             viewModel.resetTimer()
         }
 
-        // Establecer el modo por defecto al iniciar (Temporizador)
+        // Establece modo por defecto al iniciar, en esta caso, "Temporizador"
         viewModel.toggleMode(true)
 
         logAndAudit("onCreate")
     }
 
-    // --- Métodos de Ciclo de Vida para persistencia segura ---
+    // Métodos para persistencia (Lifecycle)
 
     override fun onStart() {
         super.onStart()
@@ -179,7 +177,7 @@ class MainActivity : AppCompatActivity() {
         logAndAudit("onDestroy")
     }
 
-    // --- Métodos Auxiliares ---
+    // Métodos Auxiliares
 
     private fun formatTime(totalSegundos: Long): String {
         val horas    = totalSegundos / 3600
@@ -189,18 +187,19 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun logAndAudit(evento: String) {
-        Log.d(TAG, "CONSOLA: Evento del Ciclo de Vida -> $evento")
+        Log.d(TAG, "CONSOLA: Evento del ciclo de vida -> $evento")
         viewModel.auditarEventoCicloVida(evento)
     }
 
-    // IMPLEMENTACIÓN DEL DIÁLOGO DE CONFIGURACIÓN
+    // Diálogo config
     private fun showTimeConfigurationDialog() {
-        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_time_config, null)
+        val dialogView = LayoutInflater.from(this).
+        inflate(R.layout.dialog_time_config, null)
 
         val numberPicker = dialogView.findViewById<NumberPicker>(R.id.numberPickerMinutes)
         numberPicker.minValue = 1
         numberPicker.maxValue = 60
-        numberPicker.value = 5 // Valor por defecto
+        numberPicker.value    = 5 // Valor por defecto
 
         AlertDialog.Builder(this)
             .setTitle("Configurar Temporizador (Minutos)")
@@ -211,7 +210,8 @@ class MainActivity : AppCompatActivity() {
 
                 viewModel.setTimerDuration(durationInSeconds)
                 viewModel.resetTimer()
-                Toast.makeText(this, "Temporizador fijado a $minutes minutos.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Temporizador fijado a $minutes minutos.",
+                    Toast.LENGTH_SHORT).show()
             }
             .setNegativeButton("Cancelar", null)
             .show()

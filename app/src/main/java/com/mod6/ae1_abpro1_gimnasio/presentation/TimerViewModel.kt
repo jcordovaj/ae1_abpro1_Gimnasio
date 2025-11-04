@@ -10,44 +10,44 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import android.util.Log
-import com.mod6.ae1_abpro1_gimnasio.data.model.CicloVidaEvento // 🚨 NECESARIO
+import com.mod6.ae1_abpro1_gimnasio.data.model.CicloVidaEvento
 
 // Constantes
-private const val TIMER_INTERVAL_MS = 1000L // 1 segundo
-private const val DEFAULT_DURATION_SECONDS = 60L // 1 minuto por defecto
+private const val INTERVALO_TIEMPO_MS        = 1000L // tIME_INTEVAL_MS1 segundo
+private const val DURACION_DEFAULT_SEGUNDOS = 60L // DEFAULT_DURATION_SECONDS, 1 minuto por defecto
 
 class TimerViewModel(private val repository: TimerRepository) : ViewModel() {
 
-    // --- LiveData de Estado y Tiempo ---
-    private val _tiempoActualSegundos = MutableLiveData(0L)
+    //LiveData: Estado y Tiempo
+    private val _tiempoActualSegundos        = MutableLiveData(0L)
     val tiempoActualSegundos: LiveData<Long> = _tiempoActualSegundos
 
-    private val _isRunning = MutableLiveData(false)
+    private val _isRunning           = MutableLiveData(false)
     val isRunning: LiveData<Boolean> = _isRunning
 
-    // Indica si el modo actual es Temporizador (true) o Cronómetro (false)
-    private val _isTimerMode = MutableLiveData(false)
+    // Modo actual: Temporizador (true) o Cronómetro (false)
+    private val _isTimerMode           = MutableLiveData(false)
     val isTimerMode: LiveData<Boolean> = _isTimerMode
 
     private val _auditLog = MutableLiveData<List<CicloVidaEvento>>()
     val auditLog: LiveData<List<CicloVidaEvento>> = _auditLog
 
     // Tiempo total configurado para el modo Temporizador
-    private var configuredDurationSeconds: Long = DEFAULT_DURATION_SECONDS
+    private var configuredDurationSeconds: Long = DURACION_DEFAULT_SEGUNDOS
 
-    // --- Mecanismos de Conteo ---
+    // Vars para lógica de conteo
     private var countDownTimer: CountDownTimer? = null
-    private var chronometerJob: Job? = null
+    private var chronometerJob: Job?            = null
 
     // Almacena el tiempo restante al pausar (esencial para retomar)
     private var timeWhenPausedSeconds: Long = 0L
 
     init {
         // Inicializa el tiempo actual basado en la duración por defecto (60s)
-        _tiempoActualSegundos.value = DEFAULT_DURATION_SECONDS
+        _tiempoActualSegundos.value = DURACION_DEFAULT_SEGUNDOS
     }
 
-    // --- Control de Modo ---
+    // Control de Modo
     fun toggleMode(isTimer: Boolean) {
         if (_isRunning.value == true) return
 
@@ -69,12 +69,12 @@ class TimerViewModel(private val repository: TimerRepository) : ViewModel() {
 
     fun setTimerDuration(durationInSeconds: Long) {
         if (_isRunning.value == true) return
-        configuredDurationSeconds = durationInSeconds
+        configuredDurationSeconds   = durationInSeconds
         _tiempoActualSegundos.value = durationInSeconds
-        _isTimerMode.value = true
+        _isTimerMode.value          = true
     }
 
-    // --- Control de Ejecución ---
+    // Control de Ejecución
     fun toggleTimer() {
         if (_isRunning.value == true) {
             pauseTimer()
@@ -126,13 +126,13 @@ class TimerViewModel(private val repository: TimerRepository) : ViewModel() {
         timeWhenPausedSeconds = _tiempoActualSegundos.value ?: 0L
     }
 
-    // --- Lógica Específica de Conteo ---
+    // Lógica Conteo
     private fun startCountDownTimer(startTimeSeconds: Long) {
         countDownTimer?.cancel()
 
         val millisInFuture = startTimeSeconds * 1000L
 
-        countDownTimer = object : CountDownTimer(millisInFuture, TIMER_INTERVAL_MS) {
+        countDownTimer = object : CountDownTimer(millisInFuture, INTERVALO_TIEMPO_MS) {
             override fun onTick(millisUntilFinished: Long) {
                 _tiempoActualSegundos.value = millisUntilFinished / 1000L
             }
@@ -153,14 +153,14 @@ class TimerViewModel(private val repository: TimerRepository) : ViewModel() {
         chronometerJob = viewModelScope.launch {
             var current = startTimeSeconds
             while (_isRunning.value == true) {
-                delay(TIMER_INTERVAL_MS)
+                delay(INTERVALO_TIEMPO_MS)
                 current += 1
                 _tiempoActualSegundos.value = current
             }
         }
     }
 
-    // --- Lógica de Persistencia de Datos (Room) ---
+    // Persistencia de Datos con Room
     private fun guardarEjercicio(duracion: Long) {
         if (duracion > 0) {
             viewModelScope.launch {
@@ -174,7 +174,7 @@ class TimerViewModel(private val repository: TimerRepository) : ViewModel() {
         viewModelScope.launch {
             repository.auditarEvento(evento)
             Log.d("ROOM", "Evento de ciclo de vida auditado: $evento")
-            loadAuditLog() // Refresca el log en la UI inmediatamente
+            loadAuditLog() // Refresca la UI
         }
     }
 

@@ -8,7 +8,7 @@
     android:background="@drawable/fondo_gimnasio"
     tools:context=".MainActivity">
 
-    <!-- 1. Controles de Modo (Arriba) -->
+    <!-- Control Modo-->
     <LinearLayout
         android:id="@+id/modeControlLayout"
         android:layout_width="0dp"
@@ -34,7 +34,7 @@
             android:text="TEMPORIZADOR"/>
     </LinearLayout>
 
-    <!-- 2. Botón Configurar Tiempo (Debajo de Controles de Modo) -->
+    <!-- Botón Configurar Tiempo -->
     <Button
         android:id="@+id/buttonConfigureTime"
         android:layout_width="wrap_content"
@@ -46,7 +46,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
 
-    <!-- 3. Contador de Tiempo (Debajo de Configuración) -->
+    <!-- Contador de Tiempo -->
     <TextView
         android:id="@+id/textViewTimer"
         android:layout_width="wrap_content"
@@ -64,7 +64,7 @@
         app:layout_constraintVertical_chainStyle="packed"
         />
 
-    <!-- 4. Botones Iniciar/Reset (Debajo del Contador) -->
+    <!-- Botones Iniciar/Reset -->
     <Button
         android:id="@+id/buttonToggleTimer"
         android:layout_width="wrap_content"
@@ -86,7 +86,7 @@
         app:layout_constraintStart_toEndOf="@+id/buttonToggleTimer"
         app:layout_constraintEnd_toEndOf="parent"/>
 
-    <!-- 5. Etiqueta de Auditoría (Debajo de los Botones) -->
+    <!-- Título "Eventos de Auditoría" -->
     <TextView
         android:id="@+id/textViewAuditLabel"
         android:layout_width="wrap_content"
@@ -98,7 +98,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
 
-    <!-- 6. ScrollView para Logs (Debajo de la Etiqueta) -->
+    <!-- ScrollView para Logs -->
     <ScrollView
         android:id="@+id/scrollViewAuditLog"
         android:layout_width="0dp"
@@ -123,7 +123,7 @@
             tools:text="[12:30:00] onStart\n[12:30:01] onResume"/>
     </ScrollView>
 
-    <!-- 7. Marca de Agua (Abajo) -->
+    <!-- Marca de Agua Logo "Peras con Manzanas" -->
     <ImageView
         android:id="@+id/imageViewWatermark"
         android:layout_width="100dp"
