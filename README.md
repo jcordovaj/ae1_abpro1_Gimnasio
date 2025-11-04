@@ -1,110 +1,90 @@
-# 🚀 MOD6 AE1-ABP1: Gestión de Notas Rápidas para Reuniones (MVVM + Room)
+# 🚀 MOD6 AE1-ABPRO1: Temporizador para Gimanasio (MVVM + Room)
 
 <p float="center">
   <img src="scrapbook/perasconmanzanas_icon.png" alt="Logo" width="200"/>
 </p>
 
-Aplicación nativa para Android, desarrollada en Kotlin, diseñada para registrar de forma rápida y simple notas, recordatorios o apuntes de reuniones. Utiliza el patrón de arquitectura Model-View-ViewModel (MVVM), estableciendo la separación de responsabilidades, escalabilidad y un flujo de datos completamente reactivo y estable.
+Aplicación nativa para Android, desarrollada en Kotlin, diseñada para funcionar como una herramienta dual: **Temporizador (Count Down Timer)** y **Cronómetro (Stopwatch)** , enfocada para ser usada por deportistas en entornos de entrenamiento y gimnasio. La arquitectura se basa en el patrón Model-View-ViewModel (MVVM), y la persistencia de datos utiliza la librería Room para registrar los eventos del ciclo de vida de la aplicación, lo que además se muestran por pantalla en una ventana de tipo "Scroll".
 
-El objetivo académico principal es la integración, de los componentes de Android Jetpack, utilizando Room para la persistencia local y LiveData y Kotlin Coroutines, para la gestión asíncrona y reactiva de los datos.
+El objetivo principal ha sido el demostrar la integración de los componentes de Android Jetpack para crear una aplicación robusta, separando la lógica de negocio de la UI, asegurando escalabilidad y reactividad mediante LiveData y Kotlin Coroutines.
 
 ---
 
 ## 🎯 Requerimientos de Funcionalidad y su Implementación
 
-| Requerimiento                   | Implementación en V5                                                                                                                                                  |
-| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1. Creación/Edición de Notas    | El fragmento NoteDetailFragment aloja el formulario de entrada, permitiendo registrar (o editar) el título, el cliente y el contenido de la nota.                     |
-| 2. Listado Dinámico (Home)      | El fragmento HomeFragment utiliza un RecyclerView con NoteAdapter. La lista se actualiza reactivamente al observar NotesViewModel.allNotes (LiveData).                |
-| 3. Ciclo de Vida y Persistencia | La persistencia de los datos (INSERT, UPDATE, DELETE) se ejecuta de forma segura fuera del hilo principal usando Kotlin Coroutines para no bloquear la UI.            |
-| 4. Menú Contextual              | En la creación de notas se muestra la opción Guardar/Cancelar. En la edición se añade la opción Eliminar, que solo es visible si se está editando una nota existente. |
-| 5. Estado Vacío (Empty State)   | La lista de notas en HomeFragment muestra un mensaje informativo cuando no hay registros, indicando al usuario que use el botón "Añadir" (FAB).                       |
+| Requerimiento                           | Implementación en V5                                                                                                                                                       |
+| --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1. Modos de Operación (Timer/Stopwatch) | Dos botones permiten alternar entre el**Modo Cronómetro** (cuenta progresiva) y el **Modo Temporizador** (cuenta regresiva).                                               |
+| 2. Configuración del Temporizador       | En modo Temporizador, se habilita el botón**"CONFIGURAR TIEMPO"** que abre un diálogo con un `NumberPicker` para establecer los minutos iniciales.                         |
+| 3. Registro de Auditoría (Logs)         | Los eventos principales del ciclo de vida de la `MainActivity` (`onCreate`, `onStart`, `onResume`, `onPause`, `onStop`, `onDestroy`) se registran automáticamente en Room. |
+| 4. Visualización Reactiva de Logs       | Un `ScrollView` dedicado en el `activity_main.xml` muestra la lista de eventos de auditoría (logs), actualizándose en tiempo real mediante `LiveData`.                     |
 
 ---
 
 ## 🧠 Arquitectura y Tecnología: MVVM y Jetpack
 
-Se implementa el patrón MVVM para garantizar una arquitectura limpia, mantenible y escalable.
+Se implementa el patrón MVVM (Model-View-ViewModel) para garantizar una arquitectura limpia, mantenible y escalable, utilizando los componentes de Android Jetpack.
 
 1. Modelo (Model) y Persistencia (Room)
 
-| Componente                      | Descripción                                                                                                                              |
-| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| Modelo de Datos (NoteEntity.kt) | Clase de datos que define la estructura de una nota (ID, Título, Cliente, Contenido, Fecha de Creación).                                 |
-| Database (NoteDatabase.kt)      | Clase abstracta que gestiona la base de datos Room, incluyendo el TypeConverter para Date.                                               |
-| DAO (NoteDao.kt)                | Interfaz que define las operaciones CRUD (@Insert, @Update, @Delete, @Query) y expone la lista de notas como LiveData<List<NoteEntity>>. |
-| Repositorio (NoteRepository.kt) | Centraliza el acceso a los datos (NoteDao), encapsulando la lógica de I/O dentro de funciones suspend.                                   |
+| Componente                          | Descripción                                                                                                                            |
+| ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| Modelo de Datos (LogEventEntity.kt) | Clase de datos que define la estructura del registro de auditoría (ID, Evento de Ciclo de Vida, Fecha y Hora).                         |
+| Database (AppDatabase.kt)           | Clase abstracta que gestiona la base de datos Room y la instancia única del DAO.                                                       |
+| DAO (LogEventDao.kt)                | Interfaz que define las operaciones de persistencia (@Insert, @Query) y expone la lista de logs como `LiveData<List<LogEventEntity>>`. |
+| Repositorio (LogEventRepository.kt) | Centraliza el acceso a los datos (LogEventDao), encapsulando la lógica de I/O dentro de funciones `suspend` (Kotlin Coroutines).       |
 
-2. ViewModel (NotesViewModel.kt)
+- Hereda de `ViewModel`.
+- Utiliza `viewModelScope.launch` para ejecutar las operaciones del Repository de forma asíncrona (I/O o E/S).
+- **Lógica de Temporización** : Implementa la lógica para manejar el contador de tiempo (iniciar, pausar, detener) y el _tictac_ que se produce cada segundo.
+- **Auditoría de Logs** : Contiene el método `insertLog(evento: String)` que llama al repositorio para persistir el evento del ciclo de vida.
+- Expone el estado de la aplicación a la Vista a través de `LiveData`:
+  - `timerDisplay`: El tiempo actual del temporizador/cronómetro (formato HH:MM:SS) para actualizar la UI.
+  - `isTimerRunning`: Estado booleano que determina si el contador está en movimiento.
+  - `allEvents`: Lista de todos los eventos de auditoría que alimenta el `ScrollView` de forma reactiva.
 
-- Hereda de ViewModel.
+3. Vista (View) - MainActivity.kt
 
-- Utiliza viewModelScope.launch para ejecutar las operaciones del Repository de forma asíncrona.
-
-- Mantiene la lógica de negocio (guardar, actualizar, eliminar, cargar nota por ID).
-
-- Expone el estado de la aplicación a la Vista a través de LiveData:
-
-  - allNotes: Lista de notas que alimenta el RecyclerView de forma reactiva.
-
-  - currentNoteTitle, currentNoteClient, currentNoteContent: MutableLiveData que gestionan el estado temporal del formulario de edición/creación.
-
-3. Vista (View)
-
-- MainActivity: Contenedor de la aplicación y orquestador de la navegación mediante Jetpack Navigation.
-
-- HomeFragment: Solo observa taskViewModel.allNotes y usa el NoteAdapter para actualizar el RecyclerView de forma reactiva.
-
-- NoteDetailFragment:
-
-  - Gestiona el formulario y los listeners.
-
-  - Observa las propiedades currentNoteTitle, currentNoteClient, etc., del ViewModel.
-
-  - Implementa el MenuProvider para manejar las opciones de menú dinámicas (Guardar y Eliminar).
+- Es el contenedor principal de la aplicación.
+- **Orquestación** : Inicializa el `TimerViewModel` y el `LogEventRepository`.
+- **Registro del Ciclo de Vida** : Implementa las funciones de _callback_ del ciclo de vida (`onStart`, `onResume`, etc.) para llamar a `viewModel.insertLog(...)` en cada cambio de estado.
+- **Interacción con UI** :
+  - Gestiona los listeners de los botones (Iniciar/Pausar, Reset, Configurar).
+  - **Observación Reactiva** : Observa `viewModel.timerDisplay` para actualizar el TextView principal del contador y `viewModel.allEvents` para actualizar el `ScrollView` del historial de _logs_ de forma reactiva.
+  - **Gestión de Estados** : Utiliza `viewModel.isTimerRunning` para cambiar el texto y la funcionalidad del botón Iniciar/Pausar.
 
 ## ✨ Reactividad y Flujo de Datos
 
-El flujo de datos está diseñado para ser completamente reactivo:
+El flujo de datos está diseñado para ser completamente reactivo, especialmente en el registro de la auditoría de ciclo de vida:
 
-1. Carga de Datos: **HomeFragment** llama a **`viewModel.loadNotes()`**. El ViewModel ejecuta la consulta a Room en un hilo de fondo.
-
-2. Persistencia y Actualización: La consulta del **_DAO_** retorna un **LiveData**. Cuando se realiza un **INSERT/UPDATE/DELETE**, Room modifica automáticamente los datos de la base, y el LiveData se dispara.
-
-3. Sincronización de UI: El observador en **HomeFragment** detecta el cambio en el LiveData y llama a **`adapter.submitList()`**, actualizando el RecyclerView sin intervención manual de recarga de la lista.
+1. Disparo del Evento: En un cambio de estado del ciclo de vida (ej. `onPause()`), la **MainActivity** llama a `viewModel.insertLog("PAUSE")`.
+2. Persistencia Asíncrona: El **ViewModel** utiliza `viewModelScope.launch` para llamar a `repository.insertLog(...)`, el cual ejecuta la operación de **INSERT** en el **DAO** de Room, fuera del hilo principal.
+3. Actualización de LiveData: La consulta `getAllEvents()` del **_DAO_** retorna un **LiveData** . Cuando Room confirma el nuevo INSERT, el LiveData se dispara automáticamente.
+4. Sincronización de UI: El observador en **MainActivity** detecta el cambio en `viewModel.allEvents` y actualiza el contenido del `ScrollView` para mostrar el nuevo log, manteniendo un registro en tiempo real.
 
 ## 🛠️ Tecnologías usadas
 
 - **IDE** : Android Studio
 - **Plataforma** : Android Nativo
 - **Lenguaje** : Kotlin (1.9.22)
-- **Arquitectura**: MVVM (Model-View-ViewModel).
-- **Persistencia**: Room Database (SQL Abstraction).
-- **Concurrencia**: Kotlin Coroutines y viewModelScope (Dispatchers.IO).
-- **Comunicación**: LiveData (Reactividad) y Data Binding (implícito a través de View Binding).
-- **Navegación** : Jetpack Navigation Component.
+- **Arquitectura** : MVVM (Model-View-ViewModel).
+- **Persistencia** : Room Database (SQL Abstraction).
+- **Concurrencia** : Kotlin Coroutines y `viewModelScope` (Dispatchers.IO).
+- **Comunicación** : LiveData (Reactividad) y View Binding.
 
 ---
 
 ## 🏗️ Funcionamiento de la Aplicación
 
-El flujo base es el siguiente:
+El flujo de la aplicación se centra en la operación del contador y la auditoría automática:
 
-1. Inicio y Navegación: La aplicación muestra la pantalla de bienvenida y luego la MainActivity orquesta la navegación a través de la BottomNavigationView entre VerTareasFragment (Ver Agenda) y CrearTareaFragment (Agregar).
-2. Vista Agenda (VerTareasFragment):
-   - Observa el taskViewModel.allTasks (LiveData).
-   - Cuando el ViewModel actualiza esta lista, el RecyclerView se redibuja automáticamente (reactividad).
-   - Maneja la acción de eliminar o marcar como completada, llamando a los métodos correspondientes en el ViewModel.
-3. Crear/Editar Evento (CrearTareaFragment):
-   - El usuario ingresa o edita los datos.
-   - Al presionar "Guardar" o "Actualizar":
-     - Se realiza la validación de campos obligatorios.
-     - Si se requiere alarma (Notificación), se verifica/solicita el permiso de Notificaciones (POST_NOTIFICATIONS) usando registerForActivityResult.
-     - Se llama a taskViewModel.saveOrUpdateTask(), que ejecuta la lógica de persistencia en el TaskRepository fuera del hilo principal.
-     - La vista (Fragment) observa el taskViewModel.statusMessage para mostrar un Toast de confirmación de forma segura.
-     - Finalmente, la vista navega de vuelta a la Agenda.
-4. Las tareas listadas, se puede seleccionar para ser editadas.
-5. Cada tarea tiene un botón eliminar que permite proceder al borrado explícito, debiendo confirmar la acción.
+1. Inicio y Modo: La aplicación inicia en la `MainActivity` y por defecto en el **Modo Temporizador** . Se muestra el botón "CONFIGURAR TIEMPO", y este lanza un spinner de minutos (1-60), se excluyeron los segundos.
+2. Interacción del Contador:
+   - El usuario presiona **"INICIAR"** : El `TimerViewModel` comienza el `Timer` interno que actualiza `timerDisplay` cada segundo. El botón cambia a "PAUSAR".
+   - El usuario presiona **"PAUSAR"** : Se ocultan los otros botones. El contador se detiene.
+   - El usuario presiona **"RESET"** : El contador vuelve a 00:00:00.
+3. Cambio de Modo: Si el usuario presiona el botón "Cronómetro", el campo de tiempo se restablece (si estaba activo) y se controla el inicia a través del botón **"INICIAR"**, al terminar se puede usar **"RESET" **, las funcionalidades son similares al temporizador.
+4. Auditoría de Ciclo de Vida: Mientras el usuario interactúa, cada cambio de estado de la `MainActivity` (ej., ir al _home_ , bloquear el teléfono, volver a la app) dispara un log de evento que se guarda en la base de datos Room y se muestra inmediatamente en el _log_ de la UI (Ventana con scroll).
 
 ---
 
@@ -113,51 +93,51 @@ El flujo base es el siguiente:
 <table width="100%">
     <tr>
         <td align="center" width="33%">
-            <img src="scrapbook/IconoApp.png" alt="Icono App" width="200"/>
+            <img src="scrapbook/AppInstalada.png" alt="Icono App" width="200"/>
         </td>
         <td align="center" width="33%">
-            <img src="scrapbook/LanzarApp.png" alt="Al lanzar la app" width="200"/>
+            <img src="scrapbook/Lanzamiento.png" alt="Al lanzar la app" width="200"/>
         </td>
         <td align="center" width="33%">
-            <img src="scrapbook/InicialSinDatos.png" alt="Pantalla bienvenida" width="200"/>
+            <img src="scrapbook/Inicio.png" alt="Pantalla bienvenida" width="200"/>
         </td>
     </tr>
     <tr>
         <td align="center">App instalada</td>
         <td align="center">Al lanzar la App</td>
-        <td align="center">Pantalla Inicial Sin Datos</td>
+        <td align="center">Landing</td>
     </tr>
     <tr>
         <td align="center">
-            <img src="scrapbook/Crear.png" alt="Formulario crear/ editar tarea" width="200"/>
+            <img src="scrapbook/ModoTemporizador.png" alt="Formulario crear/ editar tarea" width="200"/>
         </td>
         <td align="center">
-            <img src="scrapbook/Listado.png" alt="Selector de fecha" width="200"/>
+            <img src="scrapbook/ModoCronometro.png" alt="Selector de fecha" width="200"/>
         </td>
         <td align="center">
-            <img src="scrapbook/Editar.png" alt="Selector de hora" width="200"/>
+            <img src="scrapbook/PickerTemp.png" alt="Selector de hora" width="200"/>
         </td>
     </tr>
     <tr>
-        <td align="center">Crear Nota</td>
-        <td align="center">Listado actualizado</td>
-        <td align="center">Editar una Nota</td>
+        <td align="center">Modo temporizador</td>
+        <td align="center">Modo cronómetro</td>
+        <td align="center">Picker de minutos</td>
     </tr>
     <tr>
         <td align="center">
-            <img src="scrapbook/ListaActualizada.png" alt="Selector de estados" width="200"/>
+            <img src="scrapbook/ConfigTemp.png" alt="Selector de estados" width="200"/>
         </td>
         <td align="center">
-            <img src="scrapbook/Eliminar.png" alt="Selector categorías" width="200"/>
+            <img src="scrapbook/CronoFunc.png" alt="Selector categorías" width="200"/>
         </td>
         <td align="center">
-            <img src="scrapbook/Actualizada.png" alt="Toast guardar" width="200"/>
+            <img src="scrapbook/PERASCONMANZANAS.png" alt="Toast guardar" width="200"/>
         </td>
     </tr>
     <tr>
-        <td align="center">Lista actualizada</td>
-        <td align="center">Eliminar Nota</td>
-        <td align="center">Actualización </td>
+        <td align="center">Temporizador 5 minutos</td>
+        <td align="center">Cronómetro iniciado</td>
+        <td align="center">Otro desarrollo de "Peras con Manzanas"</td>
     </tr>
 </table>
 
@@ -237,6 +217,157 @@ e.3. Si todo ha sido configurado correctamente, la aplicación se instalará en 
 Se puede contribuir reportando problemas o con nuevas ideas, por favor respetar el estilo de programación y no subir código basura. Puede utilizar: forking del repositorio, crear pull requests, etc. Toda contribución es bienvenida.
 
 ---
+
+## 🔹 Licencia
+
+Proyecto con fines educativos.
+
+---
+
+2. ViewModel (TimerViewModel.kt)
+
+- Hereda de `ViewModel`.
+- Utiliza `viewModelScope.launch` para ejecutar las operaciones del Repository de forma asíncrona (I/O o E/S).
+- **Lógica de Temporización** : Implementa la lógica para manejar el contador de tiempo (iniciar, pausar, detener) y el _tictac_ que se produce cada segundo.
+- **Auditoría de Logs** : Contiene el método `insertLog(evento: String)` que llama al repositorio para persistir el evento del ciclo de vida.
+- Expone el estado de la aplicación a la Vista a través de `LiveData`:
+  - `timerDisplay`: El tiempo actual del temporizador/cronómetro (formato HH:MM:SS) para actualizar la UI.
+  - `isTimerRunning`: Estado booleano que determina si el contador está en movimiento.
+  - `allEvents`: Lista de todos los eventos de auditoría que alimenta el `ScrollView` de forma reactiva.
+
+3. Vista (View) - MainActivity.kt
+
+- Es el contenedor principal de la aplicación.
+- **Orquestación** : Inicializa el `TimerViewModel` y el `TimerRepository`.
+- **Registro del Ciclo de Vida** : Implementa las funciones de _callback_ del ciclo de vida (`onStart`, `onResume`, etc.) para llamar a `viewModel.insertLog(...)` en cada cambio de estado.
+- **Interacción con UI** :
+- Gestiona los listeners de los botones (Iniciar/Pausar, Reset, Configurar).
+- **Observación Reactiva** : Observa `viewModel.timerDisplay` para actualizar el TextView principal del contador y `viewModel.allEvents` para actualizar el `ScrollView` del historial de _logs_ de forma reactiva.
+- **Gestión de Estados** : Utiliza `viewModel.isTimerRunning` para cambiar el texto y la funcionalidad del botón Iniciar/Pausar.
+
+## ✨ Reactividad y Flujo de Datos
+
+El flujo de datos está diseñado para ser completamente reactivo, especialmente en el registro de la auditoría de ciclo de vida:
+
+1. Disparo del Evento: En un cambio de estado del ciclo de vida (ej. `onPause()`), la **MainActivity** llama a `viewModel.insertLog("PAUSE")`.
+2. Persistencia Asíncrona: El **ViewModel** utiliza `viewModelScope.launch` para llamar a `repository.insertLog(...)`, el cual ejecuta la operación de **INSERT** en el **DAO** de Room, fuera del hilo principal.
+3. Actualización de LiveData: La consulta `getAllEvents()` del **_DAO_** retorna un **LiveData** . Cuando Room confirma el nuevo INSERT, el LiveData se dispara automáticamente.
+4. Sincronización de UI: El observador en **MainActivity** detecta el cambio en `viewModel.allEvents` y actualiza el contenido del `ScrollView` para mostrar el nuevo log, manteniendo un registro en tiempo real.
+
+## 🛠️ Tecnologías usadas
+
+- **IDE** : Android Studio
+- **Plataforma** : Android Nativo
+- **Lenguaje** : Kotlin (1.9.22)
+- **Arquitectura** : MVVM (Model-View-ViewModel).
+- **Persistencia** : Room Database (SQL Abstraction).
+- **Concurrencia** : Kotlin Coroutines y `viewModelScope` (Dispatchers.IO).
+- **Comunicación** : LiveData (Reactividad) y View Binding.
+
+## 🏗️ Funcionamiento de la Aplicación
+
+El flujo de la aplicación se centra en la operación del contador y la auditoría automática:
+
+1. Inicio y Modo: La aplicación inicia en la `MainActivity` y por defecto en el **Modo Cronómetro** . El botón "CONFIGURAR TIEMPO" está oculto.
+2. Interacción del Contador:
+   - El usuario presiona **"INICIAR"** : El `TimerViewModel` comienza el `Timer` interno que actualiza `timerDisplay` cada segundo. El botón cambia a "PAUSAR".
+   - El usuario presiona **"PAUSAR"** : El contador se detiene. El botón vuelve a "INICIAR".
+   - El usuario presiona **"RESET"** : El contador vuelve a 00:00:00.
+3. Cambio de Modo: Si el usuario presiona el botón "Temporizador", el campo de tiempo se restablece (si estaba activo un cronómetro) y se habilita el botón "CONFIGURAR TIEMPO".
+4. Auditoría de Ciclo de Vida: Mientras el usuario interactúa, cada cambio de estado de la `MainActivity` (ej., ir al _home_ , bloquear el teléfono, volver a la app) dispara un log de evento que se guarda en la base de datos Room y se muestra inmediatamente en el _log_ de la UI.
+
+## ⭐ Capturas de Pantalla (Ejemplo)
+
+<table width="100%">
+    <tr>
+        <td align="center" width="33%">
+            <img src="scrapbook/IconoApp.png" alt="Icono App" width="200"/>
+        </td>
+        <td align="center" width="33%">
+            <img src="scrapbook/Stopwatch_Running.png" alt="Cronómetro en ejecución" width="200"/>
+        </td>
+        <td align="center" width="33%">
+            <img src="scrapbook/Timer_Config.png" alt="Configuración de Temporizador" width="200"/>
+        </td>
+    </tr>
+    <tr>
+        <td align="center">App Instalada</td>
+        <td align="center">Modo Cronómetro con contador activo</td>
+        <td align="center">Diálogo para configurar el tiempo</td>
+    </tr>
+    <tr>
+        <td align="center">
+            <img src="scrapbook/Timer_Running.png" alt="Temporizador en ejecución" width="200"/>
+        </td>
+        <td align="center">
+            <img src="scrapbook/Logs_View.png" alt="Vista de Logs de Ciclo de Vida" width="200"/>
+        </td>
+        <td align="center">
+            <img src="scrapbook/Logs_Update.png" alt="Actualización de Logs" width="200"/>
+        </td>
+    </tr>
+    <tr>
+        <td align="center">Modo Temporizador en cuenta regresiva</td>
+        <td align="center">Historial de Logs (Persistencia Room)</td>
+        <td align="center">Log actualizado reactivamente (LiveData)</td>
+    </tr>
+</table>
+
+## 🔎 Guía de Ejecución del Proyecto
+
+**Para ejecutar este proyecto en tu entorno de desarrollo, sigue estos 'quick steps':**
+
+    1.**Clonar el Repo:** Clona el proyecto en su máquina local.
+
+    2.**Abrir en Android Studio:** Abra la carpeta del proyecto con Android Studio. El IDE detectará automáticamente la configuración de Gradle.
+
+    3.**Sincronizar Gradle:** Haz clic en el botón "Sync Now" si Android Studio te lo solicita. Esto descargará todas las dependencias necesarias.
+
+    4.**Ejecutar:** Conecta un dispositivo Android físico o inicia un emulador. Luego, haz clic en el botón "Run 'app'" (el ícono de la flecha verde) para desplegar la aplicación.
+
+**Para ejecutar este proyecto en tu celular, sigue estos 'quick steps':**
+
+    1.**Copiar la APK:** Copia el archivo APK generado por Android Studio en tu celular.
+
+    2.**Instalar:** Instala la aplicación, saltando los avisos de advertencia típicos de aplicaciones no productivizadas.
+
+    3.**Abrir la App:** Haz doble clic en el ícono de la aplicación "Temporizador Gimnasio".
+
+    4.**Recorrer las opciones:** Cambia entre el modo Temporizador y Cronómetro, inicia y pausa el contador, y observa cómo se actualiza el **Historial de Logs** en tiempo real.
+
+## 🛑 Instalación y Configuración
+
+a. **Clonar el repositorio:**
+
+```
+[https://github.com/jcordovaj/ae1_abp1_Timer.git](https://github.com/jcordovaj/ae1_abp1_Timer.git)
+```
+
+b. **Abrir el Proyecto en Android Studio:**
+
+b.1. Abrir Android Studio.
+
+b.2. Seleccionar **"Open"** (Abrir) y navegar hasta la carpeta donde se clonó el repositorio.
+
+c. **Sincronizar Gradle:**
+
+c.1. Después de abrir el proyecto, espera a que la sincronización de Gradle finalice automáticamente (o haz clic en el botón del **elefante de Gradle** ). Esto descargará las librerías de Kotlin, Coroutines, Room y LiveData.
+
+d. **Configurar el Dispositivo o Emulador:**
+
+d.1. Emulador: Utiliza el AVD Manager para iniciar un emulador con una versión reciente de Android.
+
+d.2. Dispositivo físico: Conecta tu dispositivo Android con la Depuración por USB habilitada.
+
+e. **Ejecutar la aplicación:**
+
+e.1. Selecciona el dispositivo o emulador deseado en la barra de herramientas.
+
+e.2. Haz click en el botón "Run 'app'" (el triángulo verde) para iniciar la compilación y el despliegue de la aplicación.
+
+## 🎉 Contribuciones (Things-To-Do)
+
+Se puede contribuir reportando problemas o con nuevas ideas. Por favor, respeta el estilo de programación de Kotlin y la arquitectura MVVM. Toda contribución es bienvenida mediante _forking_ y _pull requests_ .
 
 ## 🔹 Licencia
 
