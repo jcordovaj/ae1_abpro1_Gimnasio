@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/fondo_gimnasio"
+    tools:context=".MainActivity">
+
+    <!-- 1. Controles de Modo (Arriba) -->
+    <LinearLayout
+        android:id="@+id/modeControlLayout"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginTop="24dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <Button
+            android:id="@+id/buttonSetCronometerMode"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="CRONÓMETRO"
+            android:layout_marginEnd="8dp"/>
+
+        <Button
+            android:id="@+id/buttonSetTimerMode"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="TEMPORIZADOR"/>
+    </LinearLayout>
+
+    <!-- 2. Botón Configurar Tiempo (Debajo de Controles de Modo) -->
+    <Button
+        android:id="@+id/buttonConfigureTime"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="CONFIGURAR TIEMPO"
+        android:visibility="gone"
+        android:layout_marginTop="16dp"
+        app:layout_constraintTop_toBottomOf="@+id/modeControlLayout"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
+    <!-- 3. Contador de Tiempo (Debajo de Configuración) -->
+    <TextView
+        android:id="@+id/textViewTimer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="60sp"
+        android:textStyle="bold"
+        android:text="00:00:00"
+        android:textColor="#FFFFFF"
+        android:layout_marginTop="32dp"
+        android:layout_marginBottom="32dp"
+        app:layout_constraintTop_toBottomOf="@+id/buttonConfigureTime"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/buttonToggleTimer"
+        app:layout_constraintVertical_chainStyle="packed"
+        />
+
+    <!-- 4. Botones Iniciar/Reset (Debajo del Contador) -->
+    <Button
+        android:id="@+id/buttonToggleTimer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Iniciar"
+        android:layout_marginTop="8dp"
+        app:layout_constraintTop_toBottomOf="@+id/textViewTimer"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/buttonReset"
+        app:layout_constraintHorizontal_chainStyle="packed"/>
+
+    <Button
+        android:id="@+id/buttonReset"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Reset"
+        android:layout_marginStart="16dp"
+        app:layout_constraintTop_toTopOf="@+id/buttonToggleTimer"
+        app:layout_constraintStart_toEndOf="@+id/buttonToggleTimer"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
+    <!-- 5. Etiqueta de Auditoría (Debajo de los Botones) -->
+    <TextView
+        android:id="@+id/textViewAuditLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Últimos Eventos de Auditoría (Room):"
+        android:textColor="#FFFFFF"
+        android:layout_marginTop="32dp"
+        app:layout_constraintTop_toBottomOf="@+id/buttonToggleTimer"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
+    <!-- 6. ScrollView para Logs (Debajo de la Etiqueta) -->
+    <ScrollView
+        android:id="@+id/scrollViewAuditLog"
+        android:layout_width="0dp"
+        android:layout_height="150dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="16dp"
+        android:background="#22FFFFFF"
+        android:padding="8dp"
+        app:layout_constraintTop_toBottomOf="@+id/textViewAuditLabel"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/imageViewWatermark"
+        android:layout_marginStart="24dp"
+        android:layout_marginEnd="24dp">
+
+        <TextView
+            android:id="@+id/textViewAuditLog"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="#EFEFEF"
+            android:textSize="12sp"
+            tools:text="[12:30:00] onStart\n[12:30:01] onResume"/>
+    </ScrollView>
+
+    <!-- 7. Marca de Agua (Abajo) -->
+    <ImageView
+        android:id="@+id/imageViewWatermark"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:layout_marginBottom="16dp"
+        android:layout_marginEnd="16dp"
+        android:alpha="0.7"
+        android:src="@drawable/perasconmanzanas_icon"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
