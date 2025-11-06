@@ -50,9 +50,11 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 
+    implementation("androidx.core:core-ktx:1.12.0")
+
     // Gimnasio
     // KTX y Ciclo de Vida
-    implementation("androidx.core:core-ktx:1.10.1")
+    //implementation("androidx.core:core-ktx:1.10.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.1")
     implementation("androidx.activity:activity-ktx:1.7.2")
 
@@ -64,17 +66,24 @@ dependencies {
     val room_version = "2.5.2"
     implementation("androidx.room:room-runtime:$room_version")
     annotationProcessor("androidx.room:room-compiler:$room_version")
-
-    // Para usar KSP (Kotlin Symbol Processing) para Room, es la forma moderna.
-    // ksp("androidx.room:room-compiler:$room_version")
-
-    // Coroutines para Room
+    
+    // Coroutines
     implementation("androidx.room:room-ktx:$room_version")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 
     // Solo KSP para el compilador:
     ksp("androidx.room:room-compiler:$room_version")
 
-    // Solo KTX para corrutinas:
-    implementation("androidx.room:room-ktx:$room_version")
+    // ***
+    // UI
+    implementation("androidx.recyclerview:recyclerview:1.3.2")
+    implementation("androidx.cardview:cardview:1.0.0")
+
+    // Retrofit (Cliente HTTP) y Serializador GSON
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.11.0")
+
 
 }
